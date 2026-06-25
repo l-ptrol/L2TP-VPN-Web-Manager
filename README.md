@@ -107,10 +107,10 @@
 
 ### Быстрая установка (через SSH)
 
-Подключитесь к роутеру по SSH (например, `ssh root@192.168.1.1`) и выполните одну команду:
+Подключитесь к роутеру по SSH (например, `ssh root@192.168.1.1`) и выполните команду (вы можете заменить `8081` в конце команды на любой другой свободный порт):
 
 ```bash
-opkg update && opkg install wget-ssl && wget -qO- https://raw.githubusercontent.com/l-ptrol/L2TP-VPN-Web-Manager/main/l2tp-setup.sh | sh
+opkg update && opkg install wget-ssl && wget -qO- https://raw.githubusercontent.com/l-ptrol/L2TP-VPN-Web-Manager/main/l2tp-setup.sh | sh -s 8081
 ```
 
 Скрипт полностью автоматизирован и выполняет следующие шаги:
@@ -362,6 +362,18 @@ ptrol-l2tp stop
 ptrol-l2tp status
 ptrol-l2tp restart
 ```
+
+### Параметры запуска (CLI Flags)
+
+При запуске бинарного файла напрямую поддерживаются аргументы командной строки:
+- `-port <число>` — Задать порт веб-панели (переопределяет и сохраняет порт в файле конфигурации).
+- `-config <путь>` — Указать путь к файлу конфигурации (по умолчанию `/opt/etc/l2tp_vpn_config.json` на Linux и `./l2tp_vpn_config.json` на Windows).
+
+Пример ручного запуска на порту `9000`:
+```bash
+/opt/usr/bin/l2tp-web -port 9000
+```
+
 
 ---
 

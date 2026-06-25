@@ -3,6 +3,7 @@ package main
 import (
 	_ "embed"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -14,13 +15,32 @@ import (
 var indexHTML []byte
 
 func main() {
+	portFlag := flag.Int("port", 0, "Web server port")
+	configFlag := flag.String("config", "", "Path to config file")
+	flag.Parse()
+
 	configPath := "/opt/etc/l2tp_vpn_config.json"
 	if runtime.GOOS == "windows" {
 		configPath = "./l2tp_vpn_config.json"
 	}
+	if *configFlag != "" {
+		configPath = *configFlag
+	}
+
+	defaultPort := 8081
+	if *portFlag > 0 {
+		defaultPort = *portFlag
+	}
 
 	// Initialize manager
-	manager = initManager(8081, configPath)
+	manager = initManager(defaultPort, configPath)
+
+	// If the port flag was explicitly set, overwrite and save config port
+	if *portFlag > 0 && manager.config.WebPort != *portFlag {
+		manager.config.WebPort = *portFlag
+		_ = manager.SaveConfig()
+	}
+
 	manager.ResumeMonitoring()
 	manager.TriggerAutostart()
 
