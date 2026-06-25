@@ -3,6 +3,9 @@
 # Установочный скрипт для L2TP VPN Web Manager на Keenetic
 # Должен запускаться под root на роутере Keenetic с установленной средой Entware.
 
+# Гарантируем, что пути Entware идут первыми
+export PATH=/opt/bin:/opt/sbin:$PATH
+
 echo "=================================================="
 echo "   Установка L2TP VPN Web Manager на Keenetic"
 echo "=================================================="
@@ -142,10 +145,10 @@ else
     DOWNLOAD_URL="https://raw.githubusercontent.com/l-ptrol/L2TP-VPN-Web-Manager/main/$BIN_NAME?nocache=$NOCACHE"
     echo "[+] Скачивание бинарного файла с GitHub: https://raw.githubusercontent.com/l-ptrol/L2TP-VPN-Web-Manager/main/$BIN_NAME..."
     
-    # Пробуем wget
-    wget -qO /opt/usr/bin/l2tp-web "$DOWNLOAD_URL" 2>/dev/null || \
-    wget -O /opt/usr/bin/l2tp-web "$DOWNLOAD_URL" 2>/dev/null || \
-    curl -sL -o /opt/usr/bin/l2tp-web "$DOWNLOAD_URL"
+    # Пробуем wget с отключением проверки сертификатов на случай отсутствия ca-certificates
+    wget --no-check-certificate -qO /opt/usr/bin/l2tp-web "$DOWNLOAD_URL" 2>/dev/null || \
+    wget --no-check-certificate -O /opt/usr/bin/l2tp-web "$DOWNLOAD_URL" 2>/dev/null || \
+    curl -k -sL -o /opt/usr/bin/l2tp-web "$DOWNLOAD_URL"
 
     
     if [ -s "/opt/usr/bin/l2tp-web" ]; then
