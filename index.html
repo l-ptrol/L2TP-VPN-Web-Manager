@@ -1,0 +1,1674 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>L2TP VPN Keenetic Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2L3 5v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5l-9-3z' fill='%230ea5e9'/><path d='M12 6L6 14h5v4l6-8h-5z' fill='%23fff'/></svg>">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    :root {
+      --bg: #0d111a;
+      --surface: #151b26;
+      --surface2: #1e2533;
+      --surface3: #283142;
+      --border: rgba(14, 165, 233, 0.15);
+      --border-focus: rgba(14, 165, 233, 0.4);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-muted-dark: #475569;
+      --primary: #0ea5e9;
+      --primary-hover: #0284c7;
+      --primary-glow: rgba(14, 165, 233, 0.3);
+      --secondary: #10b981;
+      --secondary-hover: #059669;
+      --secondary-glow: rgba(16, 185, 129, 0.3);
+      --success: #10b981;
+      --success-glow: rgba(16, 185, 129, 0.4);
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --danger-glow: rgba(239, 68, 68, 0.4);
+      --warning: #f59e0b;
+      --warning-glow: rgba(245, 158, 11, 0.3);
+      --radius: 8px;
+      --radius-lg: 12px;
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo-svg {
+      width: 38px;
+      height: 38px;
+      filter: drop-shadow(0 4px 8px var(--primary-glow));
+    }
+
+    .brand-name h1 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-name p {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 500;
+    }
+
+    .badge-keenetic {
+      background: rgba(14, 165, 233, 0.1);
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      padding: 6px 14px;
+      border-radius: 30px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .panel-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+    }
+
+    .btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      padding: 10px 20px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+
+    .btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px var(--primary-glow);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-secondary {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      box-shadow: none;
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface3);
+      border-color: var(--text-muted-dark);
+      box-shadow: none;
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      box-shadow: 0 4px 12px var(--danger-glow);
+    }
+
+    .btn-danger:hover {
+      background: var(--danger-hover);
+      box-shadow: 0 6px 16px var(--danger-glow);
+    }
+
+    /* Profiles Grid */
+    .profiles-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    @media (min-width: 680px) {
+      .profiles-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (min-width: 1000px) {
+      .profiles-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    /* Tunnel Card */
+    .tunnel-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: all 0.25s ease;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+
+    .tunnel-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .tunnel-card.active {
+      border-color: var(--secondary);
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.1);
+    }
+
+    .card-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-title-area {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .card-title-main {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted-dark);
+      flex-shrink: 0;
+      transition: all 0.3s ease;
+    }
+
+    .status-dot.connected {
+      background: var(--secondary);
+      box-shadow: 0 0 8px var(--secondary-glow);
+    }
+
+    .status-dot.connecting {
+      background: var(--warning);
+      box-shadow: 0 0 8px var(--warning-glow);
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.4; }
+      50% { opacity: 1; }
+      100% { opacity: 0.4; }
+    }
+
+    .card-title-main h3 {
+      font-size: 15px;
+      font-weight: 700;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .badge-protocol {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      width: fit-content;
+    }
+
+    .badge-protocol.ipsec {
+      background: rgba(14, 165, 233, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(14, 165, 233, 0.3);
+    }
+
+    .badge-protocol.plain {
+      background: rgba(148, 163, 184, 0.15);
+      color: var(--text-muted);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    .badge-pill-sub {
+      font-size: 9.5px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+      display: inline-block;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      vertical-align: middle;
+    }
+
+    .badge-pill-sub.bg-blue {
+      background: rgba(14, 165, 233, 0.12);
+      color: #38bdf8;
+      border: 1px solid rgba(14, 165, 233, 0.2);
+    }
+
+    .badge-pill-sub.bg-green {
+      background: rgba(16, 185, 129, 0.12);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      box-shadow: 0 0 6px rgba(16, 185, 129, 0.15);
+    }
+
+    .badge-pill-sub.bg-gray {
+      background: rgba(100, 116, 139, 0.12);
+      color: #94a3b8;
+      border: 1px solid rgba(100, 116, 139, 0.2);
+    }
+
+    /* Switch toggle */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 42px;
+      height: 24px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--surface3);
+      transition: .3s;
+      border-radius: 24px;
+      border: 1px solid var(--text-muted-dark);
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--secondary);
+      border-color: var(--secondary-hover);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(18px);
+    }
+
+    .param-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.05);
+      padding-top: 12px;
+    }
+
+    .param-col {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .param-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .param-value {
+      font-size: 12px;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: monospace;
+    }
+
+    .card-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding-top: 12px;
+      margin-top: 4px;
+    }
+
+    .btn-card-action {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-card-action:hover {
+      color: var(--text);
+      background: var(--surface2);
+    }
+
+    .btn-card-action.delete:hover {
+      color: var(--danger);
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    /* Terminal Console logs */
+    .logs-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .terminal {
+      background: #07090e;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      height: 250px;
+      overflow-y: auto;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #38bdf8;
+    }
+
+    .terminal-line {
+      margin-bottom: 4px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .terminal-line.error {
+      color: var(--danger);
+    }
+
+    .terminal-line.success {
+      color: var(--secondary);
+    }
+
+    /* Modal dialogs */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(8, 6, 12, 0.6);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .modal-content {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 500px;
+      padding: 28px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+    }
+
+    .modal-header h2 {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    input[type="text"], input[type="password"], input[type="number"], select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.3s;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--primary);
+      background: var(--surface);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    .switch-group {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface3);
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      margin: 8px 0;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 8px 0;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .password-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+
+    .password-wrapper input {
+      padding-right: 46px !important;
+    }
+
+    .password-toggle-btn {
+      position: absolute;
+      right: 12px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      transition: color 0.2s;
+    }
+
+    .password-toggle-btn:hover {
+      color: var(--text);
+    }
+
+    .no-profiles {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: var(--radius);
+    }
+
+    .pill-interactive {
+      display: inline-flex;
+      align-items: center;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: var(--radius);
+      background: var(--surface3);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+      margin-top: 4px;
+    }
+
+    .pill-interactive:hover {
+      border-color: var(--primary);
+      color: var(--text);
+      background: var(--surface2);
+    }
+
+    .pill-interactive.active {
+      border-color: var(--primary);
+      color: #fff;
+      background: var(--primary);
+      box-shadow: 0 2px 8px var(--primary-glow);
+    }
+
+    .pill-interactive.active:hover {
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+
+    /* Custom Spinbox for Port */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+    .custom-spinbox {
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      overflow: hidden;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .custom-spinbox input {
+      flex: 1;
+      background: transparent !important;
+      border: none !important;
+      text-align: center;
+      color: var(--text);
+      font-family: monospace;
+      font-size: 14px;
+      height: 38px;
+      outline: none;
+      padding: 0;
+      margin: 0;
+      box-shadow: none !important;
+    }
+    .spin-btn {
+      background: rgba(255, 255, 255, 0.03);
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      width: 40px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
+      user-select: none;
+    }
+    .spin-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
+    }
+    .spin-btn:active {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Custom Dropdown for AuthType */
+    .custom-select-container {
+      position: relative;
+      width: 100%;
+      user-select: none;
+    }
+    .custom-select-trigger {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      height: 38px;
+      padding: 0 12px;
+      color: var(--text);
+      font-size: 13px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .custom-select-trigger:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+    .custom-select-container.open .custom-select-trigger {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(0, 180, 255, 0.15);
+    }
+    .dropdown-arrow {
+      transition: transform 0.2s;
+      color: var(--text-muted);
+    }
+    .custom-select-container.open .dropdown-arrow {
+      transform: rotate(180deg);
+      color: var(--primary);
+    }
+    .custom-select-options {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: #151b26; /* Match modal surface */
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      z-index: 100;
+      display: none;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .custom-select-container.open .custom-select-options {
+      display: block;
+    }
+    .custom-select-option {
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .custom-select-option:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+    }
+    .custom-select-option.selected {
+      background: rgba(0, 180, 255, 0.1);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    /* Mobile responsive tweaks */
+    @media (max-width: 576px) {
+      body {
+        padding: 16px 10px;
+      }
+      .container {
+        gap: 16px;
+      }
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .badge-keenetic {
+        align-self: flex-start;
+      }
+      .panel {
+        padding: 16px;
+      }
+      .panel-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+      .panel-header .btn {
+        width: 100%;
+        justify-content: center;
+      }
+      .logs-panel .panel-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+      .logs-panel .panel-header div {
+        display: flex;
+        width: 100%;
+      }
+      .logs-panel .panel-header div .btn {
+        flex: 1;
+        justify-content: center;
+      }
+      .modal-content {
+        padding: 20px;
+        margin: 12px;
+        max-height: calc(100vh - 24px);
+        width: calc(100% - 24px);
+      }
+      .form-row {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      .card-header-row {
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .card-actions {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 6px;
+      }
+      .btn-card-action {
+        padding: 6px 10px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <svg class="brand-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L3 5v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5l-9-3z" fill="url(#g)" />
+          <path d="M12 6L6 14h5v4l6-8h-5z" fill="#fff" />
+          <defs>
+            <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0ea5e9" />
+              <stop offset="100%" stop-color="#10b981" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="brand-name">
+          <h1>L2TP VPN Manager</h1>
+          <p>Настройка подключений для KeeneticOS</p>
+        </div>
+      </div>
+      <div class="badge-keenetic">Keenetic Entware</div>
+    </header>
+
+    <!-- Profiles Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Подключения VPN</h2>
+        <button class="btn" onclick="openAddModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Добавить профиль
+        </button>
+      </div>
+
+      <div class="profiles-grid" id="profilesGrid">
+        <!-- Rendered dynamically -->
+        <div class="no-profiles">Загрузка профилей...</div>
+      </div>
+    </div>
+
+    <!-- Logs Panel -->
+    <div class="panel logs-panel">
+      <div class="panel-header" style="margin-bottom: 10px;">
+        <h2 class="panel-title">Системные логи VPN (logread)</h2>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px;" onclick="copyLogs()">Скопировать</button>
+          <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px;" onclick="fetchLogs()">Обновить</button>
+        </div>
+      </div>
+      <div class="terminal" id="logTerminal">
+        <div class="terminal-line">[Система] Веб-интерфейс запущен. Ожидание данных...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Modal -->
+  <div class="modal-overlay" id="profileModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Добавить профиль</h2>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="profileId">
+        
+        <div class="form-group">
+          <label for="pName">Название профиля</label>
+          <input type="text" id="pName" placeholder="например, Germany L2TP">
+        </div>
+
+        <div class="form-group">
+          <label for="pServer">Адрес VPN сервера (IP / Host)</label>
+          <input type="text" id="pServer" placeholder="например, 194.28.37.40">
+        </div>
+
+        <div class="switch-group">
+          <span style="font-size: 13px; font-weight: 600; color: var(--text);">Использовать шифрование IPsec (strongSwan)</span>
+          <label class="switch">
+            <input type="checkbox" id="pUseIPsec" onchange="toggleIPsecFields()">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="form-group" id="pskGroup" style="display: none;">
+          <label for="pPSK">Ключ IPsec Pre-Shared Key (PSK)</label>
+          <div class="password-wrapper">
+            <input type="password" id="pPSK" placeholder="Введите ключ PSK">
+            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('pPSK', this)" title="Показать пароль">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pUsername">Имя пользователя VPN</label>
+            <input type="text" id="pUsername" placeholder="VPN Username">
+          </div>
+          <div class="form-group">
+            <label for="pPassword">Пароль VPN</label>
+            <div class="password-wrapper">
+              <input type="password" id="pPassword" placeholder="VPN Password">
+              <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('pPassword', this)" title="Показать пароль">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Тип аутентификации (PPP)</label>
+          <div class="custom-select-container" id="authTypeDropdown">
+            <div class="custom-select-trigger">
+              <span id="selectedAuthTypeText">Авто (выбирается автоматически)</span>
+              <svg class="dropdown-arrow" width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="1 1 5 5 9 1"></polyline>
+              </svg>
+            </div>
+            <div class="custom-select-options">
+              <div class="custom-select-option selected" data-value="auto">Авто (выбирается автоматически)</div>
+              <div class="custom-select-option" data-value="pap">PAP</div>
+              <div class="custom-select-option" data-value="chap">CHAP</div>
+              <div class="custom-select-option" data-value="ms-chap">MS-CHAP</div>
+              <div class="custom-select-option" data-value="ms-chap-v2">MS-CHAP v2</div>
+            </div>
+          </div>
+          <input type="hidden" id="pAuthType" value="auto">
+        </div>
+
+        <div class="form-group">
+          <label for="pOutInterface">Внешний интерфейс (Out Interface)</label>
+          <input type="text" id="pOutInterface" placeholder="например, ISP, UsbLte0 (оставьте пустым для авто-выбора)" readonly>
+          <div id="interfacePills" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+            <!-- Будет заполнено динамически -->
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pSocksPort">Порт SOCKS5 прокси (127.0.0.1)</label>
+            <div class="custom-spinbox">
+              <button type="button" class="spin-btn dec" onclick="changePort(-1)">−</button>
+              <input type="number" id="pSocksPort" value="1080" min="1" max="65535">
+              <button type="button" class="spin-btn inc" onclick="changePort(1)">+</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Автозапуск соединения</label>
+            <div class="switch-group" style="margin: 0; padding: 0 12px; height: 40px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: space-between; box-sizing: border-box; border-radius: 6px;">
+              <span style="font-size: 13px; font-weight: 500; color: var(--text-muted); white-space: nowrap;">Запуск при старте</span>
+              <label class="switch" style="width: 42px; height: 24px; flex-shrink: 0;">
+                <input type="checkbox" id="pAutostart">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+        <button class="btn" onclick="saveProfile()" id="saveBtn">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let profiles = [];
+    let activeStatus = { status: 'DISCONNECTED', active_id: '' };
+    let interfaces = [];
+    let pollInterval = null;
+
+    // Custom spinbox for SOCKS5 port
+    function changePort(amount) {
+      const input = document.getElementById('pSocksPort');
+      if (!input) return;
+      let val = parseInt(input.value) || 1080;
+      val += amount;
+      if (val < 1) val = 1;
+      if (val > 65535) val = 65535;
+      input.value = val;
+    }
+
+    // Custom select dropdown for AuthType
+    document.addEventListener('click', function(e) {
+      const container = document.getElementById('authTypeDropdown');
+      if (!container) return;
+      const trigger = container.querySelector('.custom-select-trigger');
+      const options = container.querySelector('.custom-select-options');
+      
+      if (container.contains(e.target)) {
+        if (trigger.contains(e.target) || e.target === trigger) {
+          container.classList.toggle('open');
+        } else if (e.target.classList.contains('custom-select-option')) {
+          const value = e.target.getAttribute('data-value');
+          const text = e.target.textContent;
+          document.getElementById('pAuthType').value = value;
+          document.getElementById('selectedAuthTypeText').textContent = text;
+          
+          container.querySelectorAll('.custom-select-option').forEach(opt => {
+            opt.classList.remove('selected');
+          });
+          e.target.classList.add('selected');
+          container.classList.remove('open');
+        }
+      } else {
+        container.classList.remove('open');
+      }
+    });
+
+    function setAuthTypeDropdownValue(val) {
+      const container = document.getElementById('authTypeDropdown');
+      if (!container) return;
+      const hiddenInput = document.getElementById('pAuthType');
+      hiddenInput.value = val;
+      
+      const option = container.querySelector(`.custom-select-option[data-value="${val}"]`);
+      if (option) {
+        document.getElementById('selectedAuthTypeText').textContent = option.textContent;
+        container.querySelectorAll('.custom-select-option').forEach(opt => {
+          opt.classList.remove('selected');
+        });
+        option.classList.add('selected');
+      }
+    }
+
+    async function loadData() {
+      await fetchInterfaces();
+      await fetchProfiles();
+      await fetchStatus();
+      renderProfiles();
+    }
+
+    async function fetchInterfaces() {
+      try {
+        const res = await fetch('/api/interfaces');
+        interfaces = await res.json();
+        populateInterfacesDropdown();
+      } catch (err) {
+        console.error('Failed to load interfaces', err);
+      }
+    }
+
+    function populateInterfacesDropdown() {
+      const pillsContainer = document.getElementById('interfacePills');
+      if (!pillsContainer) return;
+      pillsContainer.innerHTML = '';
+      if (interfaces.length === 0) {
+        pillsContainer.innerHTML = '<span style="font-size: 11px; color: var(--text-muted);">Интерфейсы не найдены</span>';
+        return;
+      }
+      interfaces.forEach(iface => {
+        const parts = iface.display_name.split(' - ');
+        const name = parts[0];
+        const ip = parts[1] || '';
+
+        const pill = document.createElement('span');
+        pill.className = 'pill-interactive';
+        pill.title = "Нажмите, чтобы добавить/удалить";
+        pill.dataset.name = iface.name;
+
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = name;
+        pill.appendChild(nameSpan);
+
+        if (ip) {
+          const ipSpan = document.createElement('span');
+          ipSpan.style.opacity = '0.45';
+          ipSpan.style.fontSize = '9.5px';
+          ipSpan.style.marginLeft = '4px';
+          ipSpan.textContent = ip;
+          pill.appendChild(ipSpan);
+        }
+
+        pill.addEventListener('click', () => {
+          const input = document.getElementById('pOutInterface');
+          const currentVal = input.value.trim();
+          const selectedParts = currentVal.split(',').map(s => s.trim()).filter(s => s !== '');
+          if (selectedParts.includes(iface.name)) {
+            const newParts = selectedParts.filter(p => p !== iface.name);
+            input.value = newParts.join(', ');
+          } else {
+            selectedParts.push(iface.name);
+            input.value = selectedParts.join(', ');
+          }
+          updateInterfacePillsHighlight();
+        });
+        pillsContainer.appendChild(pill);
+      });
+      updateInterfacePillsHighlight();
+    }
+
+    function updateInterfacePillsHighlight() {
+      const pillsContainer = document.getElementById('interfacePills');
+      if (!pillsContainer) return;
+      const input = document.getElementById('pOutInterface');
+      const currentVal = input.value.trim();
+      const selectedNames = currentVal.split(',')
+        .map(s => s.trim())
+        .filter(s => s !== '');
+
+      const pills = pillsContainer.querySelectorAll('.pill-interactive');
+      pills.forEach((pill) => {
+        const name = pill.dataset.name;
+        if (selectedNames.includes(name)) {
+          pill.classList.add('active');
+        } else {
+          pill.classList.remove('active');
+        }
+      });
+    }
+
+    async function fetchProfiles() {
+      try {
+        const res = await fetch('/api/profiles');
+        profiles = await res.json();
+      } catch (err) {
+        showLog('Ошибка загрузки профилей: ' + err.message, 'error');
+      }
+    }
+
+    async function fetchStatus() {
+      try {
+        const res = await fetch('/api/status');
+        activeStatus = await res.json();
+      } catch (err) {
+        console.error('Failed to get status', err);
+      }
+    }
+
+    async function fetchLogs() {
+      try {
+        const res = await fetch('/api/logs');
+        const lines = await res.json();
+        const term = document.getElementById('logTerminal');
+        
+        let atBottom = term.scrollHeight - term.clientHeight <= term.scrollTop + 50;
+
+        term.innerHTML = '';
+        if (lines.length === 0) {
+          term.innerHTML = '<div class="terminal-line">[Система] Логов нет</div>';
+          return;
+        }
+
+        lines.forEach(line => {
+          const div = document.createElement('div');
+          div.className = 'terminal-line';
+          if (line.includes(' успешно ') || line.includes('CONNECTED') || line.includes('успешно')) {
+            div.classList.add('success');
+          } else if (line.includes('Ошибка') || line.includes('failed') || line.includes('error')) {
+            div.classList.add('error');
+          }
+          div.textContent = line;
+          term.appendChild(div);
+        });
+
+        if (atBottom) {
+          term.scrollTop = term.scrollHeight;
+        }
+      } catch (err) {
+        console.error('Failed to fetch logs', err);
+      }
+    }
+
+    function showLog(msg, type = '') {
+      const term = document.getElementById('logTerminal');
+      const div = document.createElement('div');
+      div.className = 'terminal-line ' + type;
+      const t = new Date().toLocaleTimeString();
+      div.textContent = `[${t}] ${msg}`;
+      term.appendChild(div);
+      term.scrollTop = term.scrollHeight;
+    }
+
+    function copyLogs() {
+      const term = document.getElementById('logTerminal');
+      if (!term) return;
+      const text = term.innerText;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          alert('Логи успешно скопированы в буфер обмена!');
+        }).catch(err => {
+          fallbackCopyText(text);
+        });
+      } else {
+        fallbackCopyText(text);
+      }
+    }
+
+    function fallbackCopyText(text) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.top = '0';
+      textarea.style.left = '0';
+      textarea.style.width = '2em';
+      textarea.style.height = '2em';
+      textarea.style.padding = '0';
+      textarea.style.border = 'none';
+      textarea.style.outline = 'none';
+      textarea.style.boxShadow = 'none';
+      textarea.style.background = 'transparent';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          alert('Логи успешно скопированы в буфер обмена!');
+        } else {
+          alert('Не удалось скопировать логи');
+        }
+      } catch (err) {
+        alert('Не удалось скопировать логи: ' + err.message);
+      }
+      document.body.removeChild(textarea);
+    }
+
+    function renderProfiles() {
+      const grid = document.getElementById('profilesGrid');
+      grid.innerHTML = '';
+
+      if (profiles.length === 0) {
+        grid.innerHTML = '<div class="no-profiles">Список профилей пуст. Нажмите «Добавить профиль» для настройки.</div>';
+        return;
+      }
+
+      profiles.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'tunnel-card';
+        
+        const pId = p.id || p.ID;
+        const pName = p.name || p.Name;
+        const pServer = p.server || p.Server;
+        const pUsername = p.username || p.Username;
+        const activeId = activeStatus.active_id || activeStatus.ActiveID;
+        const currentStatus = activeStatus.status || activeStatus.Status;
+        const isCurrentActive = activeId === pId;
+        
+        let dotClass = '';
+        if (isCurrentActive) {
+          card.classList.add('active');
+          if (currentStatus === 'CONNECTED') {
+            dotClass = 'connected';
+          } else if (currentStatus === 'CONNECTING') {
+            dotClass = 'connecting';
+          }
+        }
+
+        const useIPsec = p.use_ipsec !== undefined ? p.use_ipsec : p.UseIPsec;
+        const protocolBadge = useIPsec 
+          ? '<span class="badge-protocol ipsec">L2TP/IPsec</span>' 
+          : '<span class="badge-protocol plain">L2TP (без IPsec)</span>';
+
+        const autostart = p.autostart !== undefined ? p.autostart : (p.Autostart || false);
+        const autostartBadge = autostart 
+          ? '<span class="badge-protocol" style="background: rgba(0, 180, 255, 0.1); color: #00b4ff; border: 1px solid rgba(0, 180, 255, 0.2);">Автозапуск</span>' 
+          : '';
+
+        const outInterface = p.out_interface !== undefined ? p.out_interface : p.OutInterface;
+        const activeOutIface = (isCurrentActive && currentStatus !== 'DISCONNECTED') ? (activeStatus.out_interface || activeStatus.OutInterface || '') : '';
+
+        let outIfaceBadges = '';
+        if (outInterface) {
+          const parts = outInterface.split(',').map(s => s.trim()).filter(s => s !== '');
+          parts.forEach(part => {
+            const isActive = part === activeOutIface;
+            const badgeClass = isActive ? 'badge-pill-sub bg-green' : 'badge-pill-sub bg-gray';
+            outIfaceBadges += `<span class="${badgeClass}">${part}</span>`;
+          });
+        } else {
+          outIfaceBadges = '<span class="badge-pill-sub bg-gray">по умолчанию</span>';
+        }
+
+        let dynamicRow = '';
+        if (isCurrentActive && currentStatus !== 'DISCONNECTED') {
+          const device = activeStatus.device || activeStatus.Device || '—';
+          const ip = activeStatus.ip || activeStatus.IP || 'получение...';
+          const statusText = currentStatus === 'CONNECTED' ? 'Подключено' : 'Подключение...';
+          const socksPort = activeStatus.socks_port || activeStatus.SocksPort;
+          
+          let socksLine = '';
+          if (socksPort) {
+            socksLine = `
+              <div class="param-row" style="border-top: 1px dashed rgba(255, 255, 255, 0.08); padding-top: 8px; margin-top: 4px;">
+                <div class="param-col" style="grid-column: span 2;">
+                  <span class="param-label">SOCKS5 прокси (туннелирует трафик)</span>
+                  <span class="param-value" style="color: var(--primary); font-family: monospace; font-weight: 600;">
+                    socks5://127.0.0.1:${socksPort}
+                  </span>
+                </div>
+              </div>
+            `;
+          }
+
+          dynamicRow = `
+            <div class="param-row" style="border-top: 1px dashed rgba(255, 255, 255, 0.08); padding-top: 12px; margin-top: 4px;">
+              <div class="param-col">
+                <span class="param-label">Туннель (PPP)</span>
+                <span class="param-value" style="color: var(--secondary);">${device} (${statusText})</span>
+              </div>
+              <div class="param-col" style="text-align: right; align-items: flex-end;">
+                <span class="param-label">Полученный IP</span>
+                <span class="param-value" style="color: var(--secondary); font-family: monospace;">${ip}</span>
+              </div>
+            </div>
+            ${socksLine}
+          `;
+        }
+
+        card.innerHTML = `
+          <div class="card-header-row">
+            <div class="card-title-area">
+              <div class="card-title-main">
+                <div class="status-dot ${dotClass}" id="dot-${pId}"></div>
+                <h3 title="${pName}">${pName}</h3>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+                ${protocolBadge}
+                ${autostartBadge}
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-${pId}" ${isCurrentActive && currentStatus !== 'DISCONNECTED' ? 'checked' : ''} onchange="toggleTunnel('${pId}', this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="param-row">
+            <div class="param-col">
+              <span class="param-label">Сервер</span>
+              <span class="param-value" title="${pServer}">${pServer}</span>
+            </div>
+            <div class="param-col">
+              <span class="param-label">Логин</span>
+              <span class="param-value" title="${pUsername}">${pUsername}</span>
+            </div>
+          </div>
+
+          <div class="param-row">
+            <div class="param-col" style="grid-column: span 2;">
+              <span class="param-label">Внешние интерфейсы</span>
+              <div class="param-value" style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px;">${outIfaceBadges}</div>
+            </div>
+          </div>
+
+          ${dynamicRow}
+
+          <div class="card-actions">
+            <button class="btn-card-action" onclick="openEditModal('${pId}')">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+              Изменить
+            </button>
+            <button class="btn-card-action delete" onclick="deleteProfile('${pId}')">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+              Удалить
+            </button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    async function toggleTunnel(id, start) {
+      document.querySelectorAll('.switch input').forEach(input => input.disabled = true);
+      
+      const dot = document.getElementById(`dot-${id}`);
+      if (start) {
+        showLog('Запуск подключения...', 'success');
+        if (dot) {
+          dot.className = 'status-dot connecting';
+        }
+        try {
+          const res = await fetch('/api/profiles/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id })
+          });
+          const result = await res.json();
+          if (result.status === 'error') {
+            showLog('Ошибка запуска: ' + result.message, 'error');
+          } else {
+            showLog('Подключение инициировано успешно.', 'success');
+          }
+        } catch (err) {
+          showLog('Ошибка запуска подключения: ' + err.message, 'error');
+        }
+      } else {
+        showLog('Остановка подключения...', 'warning');
+        if (dot) {
+          dot.className = 'status-dot';
+        }
+        try {
+          const res = await fetch('/api/profiles/stop', {
+            method: 'POST'
+          });
+          const result = await res.json();
+          if (result.status === 'error') {
+            showLog('Ошибка остановки: ' + result.message, 'error');
+          } else {
+            showLog('Подключение остановлено.', 'success');
+          }
+        } catch (err) {
+          showLog('Ошибка остановки подключения: ' + err.message, 'error');
+        }
+      }
+      
+      await loadData();
+      await fetchLogs();
+      document.querySelectorAll('.switch input').forEach(input => input.disabled = false);
+    }
+
+    function toggleIPsecFields() {
+      const useIPsec = document.getElementById('pUseIPsec').checked;
+      document.getElementById('pskGroup').style.display = useIPsec ? 'flex' : 'none';
+    }
+
+    function togglePasswordVisibility(inputId, btn) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+        btn.title = "Скрыть пароль";
+      } else {
+        input.type = 'password';
+        btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+        btn.title = "Показать пароль";
+      }
+    }
+
+    function resetPasswordFieldsVisibility() {
+      document.getElementById('pPSK').type = 'password';
+      document.getElementById('pPassword').type = 'password';
+      const eyeOpenSVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+      document.querySelectorAll('.password-toggle-btn').forEach(btn => {
+        btn.innerHTML = eyeOpenSVG;
+        btn.title = "Показать пароль";
+      });
+    }
+
+    function openAddModal() {
+      document.getElementById('modalTitle').textContent = 'Добавить профиль';
+      document.getElementById('profileId').value = '';
+      document.getElementById('pName').value = '';
+      document.getElementById('pServer').value = '';
+      document.getElementById('pUseIPsec').checked = false;
+      document.getElementById('pPSK').value = '';
+      document.getElementById('pUsername').value = '';
+      document.getElementById('pPassword').value = '';
+      document.getElementById('pOutInterface').value = '';
+      setAuthTypeDropdownValue('auto');
+      document.getElementById('pSocksPort').value = '1080';
+      document.getElementById('pAutostart').checked = false;
+      toggleIPsecFields();
+      resetPasswordFieldsVisibility();
+      updateInterfacePillsHighlight();
+      document.getElementById('profileModal').style.display = 'flex';
+    }
+
+    function openEditModal(id) {
+      const p = profiles.find(x => (x.id === id || x.ID === id));
+      if (!p) return;
+
+      document.getElementById('modalTitle').textContent = 'Изменить профиль';
+      document.getElementById('profileId').value = p.id || p.ID;
+      document.getElementById('pName').value = p.name || p.Name;
+      document.getElementById('pServer').value = p.server || p.Server;
+      document.getElementById('pUseIPsec').checked = p.use_ipsec !== undefined ? p.use_ipsec : p.UseIPsec;
+      document.getElementById('pPSK').value = p.psk || p.PSK || '';
+      document.getElementById('pUsername').value = p.username || p.Username;
+      document.getElementById('pPassword').value = p.password || p.Password;
+      document.getElementById('pOutInterface').value = p.out_interface || p.OutInterface || '';
+      setAuthTypeDropdownValue(p.auth_type || p.AuthType || 'auto');
+      document.getElementById('pSocksPort').value = p.socks_port !== undefined ? p.socks_port : (p.SocksPort || '1080');
+      document.getElementById('pAutostart').checked = p.autostart !== undefined ? p.autostart : (p.Autostart || false);
+      toggleIPsecFields();
+      resetPasswordFieldsVisibility();
+      updateInterfacePillsHighlight();
+      document.getElementById('profileModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('profileModal').style.display = 'none';
+    }
+
+    async function saveProfile() {
+      const id = document.getElementById('profileId').value;
+      const isEdit = id !== '';
+      const url = isEdit ? '/api/profiles/edit' : '/api/profiles/add';
+
+      const useIPsec = document.getElementById('pUseIPsec').checked;
+      const profileData = {
+        name: document.getElementById('pName').value.trim(),
+        server: document.getElementById('pServer').value.trim(),
+        use_ipsec: useIPsec,
+        psk: useIPsec ? document.getElementById('pPSK').value : '',
+        username: document.getElementById('pUsername').value.trim(),
+        password: document.getElementById('pPassword').value,
+        tun_num: 0,
+        tun_ip: '10.254.254.1',
+        tun_mask: '255.255.255.0',
+        out_interface: document.getElementById('pOutInterface').value.trim(),
+        auth_type: document.getElementById('pAuthType').value,
+        socks_port: parseInt(document.getElementById('pSocksPort').value) || 1080,
+        autostart: document.getElementById('pAutostart').checked
+      };
+
+      if (isEdit) {
+        profileData.id = id;
+      }
+
+      if (!profileData.name || !profileData.server || !profileData.username || !profileData.password) {
+        alert('Заполните все обязательные поля (Имя, Сервер, Логин, Пароль)');
+        return;
+      }
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(profileData)
+        });
+
+        if (!res.ok) {
+          throw new Error(await res.text());
+        }
+
+        showLog(isEdit ? 'Профиль изменен.' : 'Профиль добавлен.', 'success');
+        closeModal();
+        await loadData();
+      } catch (err) {
+        alert('Ошибка при сохранении: ' + err.message);
+      }
+    }
+
+    async function deleteProfile(id) {
+      if (!confirm('Вы действительно хотите удалить этот профиль?')) {
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/profiles/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: id })
+        });
+
+        if (!res.ok) {
+          throw new Error(await res.text());
+        }
+
+        showLog('Профиль удален.', 'warning');
+        await loadData();
+      } catch (err) {
+        alert('Ошибка удаления: ' + err.message);
+      }
+    }
+
+    function startPolling() {
+      pollInterval = setInterval(async () => {
+        const oldStatus = activeStatus.status || activeStatus.Status;
+        const oldActiveId = activeStatus.active_id || activeStatus.ActiveID;
+        const oldIP = activeStatus.ip || activeStatus.IP;
+        const oldDevice = activeStatus.device || activeStatus.Device;
+        
+        await fetchStatus();
+        const newStatus = activeStatus.status || activeStatus.Status;
+        const newActiveId = activeStatus.active_id || activeStatus.ActiveID;
+        const newIP = activeStatus.ip || activeStatus.IP;
+        const newDevice = activeStatus.device || activeStatus.Device;
+        
+        if (oldStatus !== newStatus || oldActiveId !== newActiveId || oldIP !== newIP || oldDevice !== newDevice) {
+          renderProfiles();
+        } else {
+          profiles.forEach(p => {
+            const pId = p.id || p.ID;
+            const dot = document.getElementById(`dot-${pId}`);
+            const checkbox = document.getElementById(`toggle-${pId}`);
+            if (dot) {
+              const isCurrent = newActiveId === pId;
+              if (isCurrent) {
+                if (newStatus === 'CONNECTED') {
+                  dot.className = 'status-dot connected';
+                  if (checkbox) checkbox.checked = true;
+                } else if (newStatus === 'CONNECTING') {
+                  dot.className = 'status-dot connecting';
+                  if (checkbox) checkbox.checked = true;
+                } else {
+                  dot.className = 'status-dot';
+                  if (checkbox) checkbox.checked = false;
+                }
+              } else {
+                dot.className = 'status-dot';
+                if (checkbox) checkbox.checked = false;
+              }
+            }
+          });
+        }
+
+        await fetchLogs();
+      }, 2000);
+    }
+
+    loadData().then(() => {
+      fetchLogs();
+      startPolling();
+    });
+  </script>
+</body>
+</html>
