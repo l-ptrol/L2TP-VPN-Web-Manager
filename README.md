@@ -105,54 +105,43 @@
 - Пакеты: `strongswan-default`, `strongswan-swanctl`, `xl2tpd`, `ip-full`, `iptables`, `ppp-mod-pppol2tp`
 - SSH-доступ к роутеру (root)
 
-### Шаг 1: Скачайте релиз
+### Быстрая установка (через SSH)
 
-Скачайте архив с [Releases](../../releases) и распакуйте на ваш компьютер. Выберите бинарник под архитектуру вашего роутера:
-
-| Архитектура | Бинарник | Модели Keenetic |
-|-------------|----------|-----------------|
-| MIPS Little Endian | `l2tp-web-mipsle` | Keenetic Viva, Giant, Extra, Omni, Lite и др. на MT7621 |
-| ARM 32-bit | `l2tp-web-arm` | Некоторые модели Keenetic на ARM |
-| ARM 64-bit | `l2tp-web-arm64` | Keenetic Hero, Hopper и др. на современных ARM64 |
-| Linux x86_64 | `l2tp-web-linux` | Для тестирования на Linux-ПК |
-
-### Шаг 2: Соберите (опционально)
-
-Если вы клонировали репозиторий и хотите собрать сами:
-
-```powershell
-# На Windows (PowerShell):
-.\build.ps1
-
-# Или вручную для конкретной платформы:
-$env:CGO_ENABLED="0"; $env:GOOS="linux"; $env:GOARCH="mipsle"; $env:GOMIPS="softfloat"
-go build -buildvcs=false -ldflags="-s -w" -o l2tp-web-mipsle
-```
-
-### Шаг 3: Установите на роутер
-
-Скопируйте файлы на роутер и запустите установочный скрипт:
+Подключитесь к роутеру по SSH (например, `ssh root@192.168.1.1`) и выполните одну команду:
 
 ```bash
-# С компьютера (через SCP):
-scp l2tp-web-mipsle root@192.168.1.1:/tmp/
-scp l2tp-setup.sh root@192.168.1.1:/tmp/
-
-# На роутере (через SSH):
-ssh root@192.168.1.1
-cd /tmp
-chmod +x l2tp-setup.sh
-./l2tp-setup.sh
+opkg update && opkg install wget-ssl && wget -qO- https://raw.githubusercontent.com/l-ptrol/L2TP-VPN-Web-Manager/main/l2tp-setup.sh | sh
 ```
 
-Скрипт автоматически:
-1. Проверит наличие Entware и установит недостающие пакеты
-2. Остановит старые процессы (xl2tpd, charon, предыдущие версии менеджера)
-3. Настроит strongSwan для детального логирования
-4. Скопирует бинарник в `/opt/usr/bin/l2tp-web`
-5. Создаст init.d скрипт (`S99l2tp-web`) для автозапуска
-6. Создаст конфигурационный файл `/opt/etc/l2tp_vpn_config.json`
-7. Запустит веб-сервис
+Скрипт полностью автоматизирован и выполняет следующие шаги:
+1. **Проверка окружения**: Убедится в наличии Entware.
+2. **Установка зависимостей**: Автоматически установит из репозитория Entware все необходимые пакеты (`strongswan-default`, `strongswan-swanctl`, `strongswan-mod-openssl`, `xl2tpd`, `ip-full`, `iptables`, `ppp-mod-pppol2tp`).
+3. **Определение архитектуры**: Детектирует CPU роутера (MIPSLE, ARM, ARM64 или standard Linux).
+4. **Скачивание бинарника**: Автоматически скачает нужный скомпилированный файл веб-менеджера напрямую с GitHub в `/opt/usr/bin/l2tp-web`.
+5. **Настройка логов**: Сконфигурирует strongSwan для записи подробных логов в `/opt/var/log/swanctl.log`.
+6. **Автозапуск**: Создаст init-скрипт `/opt/etc/init.d/S99l2tp-web` для автозапуска веб-менеджера при старте роутера.
+7. **Конфигурация**: Создаст пустой файл конфигурации `/opt/etc/l2tp_vpn_config.json` (если он еще не существовал).
+8. **Запуск**: Запустит веб-интерфейс менеджера.
+
+---
+
+### Ручная установка (офлайн-метод)
+
+Если у вашего роутера временно отсутствует интернет или вы хотите установить файлы локально:
+
+1. Скачайте файлы [l2tp-setup.sh](https://raw.githubusercontent.com/l-ptrol/L2TP-VPN-Web-Manager/main/l2tp-setup.sh) и подходящий бинарник для вашей архитектуры (например, [l2tp-web-mipsle](https://raw.githubusercontent.com/l-ptrol/L2TP-VPN-Web-Manager/main/l2tp-web-mipsle)).
+2. Скопируйте файлы на роутер в папку `/tmp/` с помощью SCP:
+   ```bash
+   scp l2tp-web-mipsle root@192.168.1.1:/tmp/
+   scp l2tp-setup.sh root@192.168.1.1:/tmp/
+   ```
+3. Подключитесь по SSH и запустите скрипт из папки `/tmp/`:
+   ```bash
+   ssh root@192.168.1.1
+   cd /tmp && chmod +x l2tp-setup.sh && ./l2tp-setup.sh
+   ```
+
+---
 
 ### Шаг 4: Откройте веб-интерфейс
 

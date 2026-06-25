@@ -98,38 +98,53 @@ fi
 
 case "$ARCH" in
     mipsel)
-        BINARY_CANDIDATES="l2tp-web-mipsle l2tp-web"
+        BIN_NAME="l2tp-web-mipsle"
         ;;
     aarch64)
-        BINARY_CANDIDATES="l2tp-web-arm64 l2tp-web"
+        BIN_NAME="l2tp-web-arm64"
         ;;
     arm*)
-        BINARY_CANDIDATES="l2tp-web-arm l2tp-web"
+        BIN_NAME="l2tp-web-arm"
         ;;
     *)
-        BINARY_CANDIDATES="l2tp-web-linux l2tp-web"
+        BIN_NAME="l2tp-web-linux"
         ;;
 esac
 
-FOUND_BINARY=""
-for bin in $BINARY_CANDIDATES; do
-    if [ -f "./$bin" ]; then
-        FOUND_BINARY="./$bin"
-        break
-    fi
-done
+echo "[+] Архитектура роутера: $ARCH. Требуемый файл: $BIN_NAME"
 
-if [ -n "$FOUND_BINARY" ]; then
-    echo "[+] Архитектура роутера: $ARCH. Копирование бинарного файла $FOUND_BINARY -> /opt/usr/bin/l2tp-web..."
-    cp "$FOUND_BINARY" /opt/usr/bin/l2tp-web
+# Проверяем наличие локального файла (например, если скопировали файлы вручную)
+if [ -f "./$BIN_NAME" ]; then
+    echo "[+] Копирование локального файла ./$BIN_NAME -> /opt/usr/bin/l2tp-web..."
+    cp "./$BIN_NAME" /opt/usr/bin/l2tp-web
+    chmod +x /opt/usr/bin/l2tp-web
+elif [ -f "./l2tp-web" ]; then
+    echo "[+] Копирование локального файла ./l2tp-web -> /opt/usr/bin/l2tp-web..."
+    cp "./l2tp-web" /opt/usr/bin/l2tp-web
     chmod +x /opt/usr/bin/l2tp-web
 else
-    if [ -f "/opt/usr/bin/l2tp-web" ]; then
-        echo "[+] Исполняемый файл уже установлен в /opt/usr/bin/l2tp-web."
+    # Скачиваем бинарник из GitHub репозитория (ветка main)
+    DOWNLOAD_URL="https://raw.githubusercontent.com/l-ptrol/L2TP-VPN-Web-Manager/main/$BIN_NAME"
+    echo "[+] Скачивание бинарного файла с GitHub: $DOWNLOAD_URL..."
+    
+    # Пробуем wget
+    wget -qO /opt/usr/bin/l2tp-web "$DOWNLOAD_URL" 2>/dev/null || \
+    wget -O /opt/usr/bin/l2tp-web "$DOWNLOAD_URL" 2>/dev/null || \
+    curl -sL -o /opt/usr/bin/l2tp-web "$DOWNLOAD_URL"
+    
+    if [ -s "/opt/usr/bin/l2tp-web" ]; then
+        echo "[+] Скачивание завершено успешно."
         chmod +x /opt/usr/bin/l2tp-web
     else
-        echo "[-] Внимание: Подходящий исполняемый файл l2tp-web не найден в текущей папке!"
-        echo "    Скомпилируйте l2tp-web под архитектуру $ARCH перед окончательным запуском."
+        # Резервный вариант: если файл уже был установлен ранее
+        if [ -f "/opt/usr/bin/l2tp-web" ]; then
+            echo "[!] Предупреждение: Не удалось скачать файл, используем существующий в /opt/usr/bin/l2tp-web"
+            chmod +x /opt/usr/bin/l2tp-web
+        else
+            echo "[-] Ошибка: Не удалось скачать бинарный файл $BIN_NAME!"
+            echo "    Пожалуйста, убедитесь, что на роутере установлен пакет 'wget-ssl' или 'curl' и есть интернет."
+            exit 1
+        fi
     fi
 fi
 
