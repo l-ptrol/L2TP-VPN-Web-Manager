@@ -119,24 +119,34 @@ esac
 
 echo "[+] Архитектура роутера: $ARCH. Требуемый файл: $BIN_NAME"
 
-# Проверяем наличие локального файла (например, если скопировали файлы вручную)
-if [ -f "./$BIN_NAME" ]; then
+# Определяем, запущен ли скрипт из пайпа (stdin)
+IS_PIPE=0
+case "$0" in
+    sh|ash|bash|zsh|stdin|*sh)
+        IS_PIPE=1
+        ;;
+esac
+
+# Проверяем наличие локального файла (только если запущен не из пайпа)
+if [ "$IS_PIPE" -eq 0 ] && [ -f "./$BIN_NAME" ]; then
     echo "[+] Копирование локального файла ./$BIN_NAME -> /opt/usr/bin/l2tp-web..."
     cp "./$BIN_NAME" /opt/usr/bin/l2tp-web
     chmod +x /opt/usr/bin/l2tp-web
-elif [ -f "./l2tp-web" ]; then
+elif [ "$IS_PIPE" -eq 0 ] && [ -f "./l2tp-web" ]; then
     echo "[+] Копирование локального файла ./l2tp-web -> /opt/usr/bin/l2tp-web..."
     cp "./l2tp-web" /opt/usr/bin/l2tp-web
     chmod +x /opt/usr/bin/l2tp-web
 else
-    # Скачиваем бинарник из GitHub репозитория (ветка main)
-    DOWNLOAD_URL="https://raw.githubusercontent.com/l-ptrol/L2TP-VPN-Web-Manager/main/$BIN_NAME"
-    echo "[+] Скачивание бинарного файла с GitHub: $DOWNLOAD_URL..."
+    # Скачиваем бинарник из GitHub репозитория (ветка main) с кэш-бастером
+    NOCACHE=$(date +%s)
+    DOWNLOAD_URL="https://raw.githubusercontent.com/l-ptrol/L2TP-VPN-Web-Manager/main/$BIN_NAME?nocache=$NOCACHE"
+    echo "[+] Скачивание бинарного файла с GitHub: https://raw.githubusercontent.com/l-ptrol/L2TP-VPN-Web-Manager/main/$BIN_NAME..."
     
     # Пробуем wget
     wget -qO /opt/usr/bin/l2tp-web "$DOWNLOAD_URL" 2>/dev/null || \
     wget -O /opt/usr/bin/l2tp-web "$DOWNLOAD_URL" 2>/dev/null || \
     curl -sL -o /opt/usr/bin/l2tp-web "$DOWNLOAD_URL"
+
     
     if [ -s "/opt/usr/bin/l2tp-web" ]; then
         echo "[+] Скачивание завершено успешно."
