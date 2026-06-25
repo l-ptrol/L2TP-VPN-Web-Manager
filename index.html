@@ -891,10 +891,16 @@
     <div class="panel">
       <div class="panel-header">
         <h2 class="panel-title">Подключения VPN</h2>
-        <button class="btn" onclick="openAddModal()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          Добавить профиль
-        </button>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary" onclick="openSettingsModal()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            Настройки
+          </button>
+          <button class="btn" onclick="openAddModal()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Добавить профиль
+          </button>
+        </div>
       </div>
 
       <div class="profiles-grid" id="profilesGrid">
@@ -1027,16 +1033,118 @@
     </div>
   </div>
 
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-content" style="max-width: 450px;">
+      <div class="modal-header">
+        <h2>Настройки сервиса</h2>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="sWebPort">Порт веб-панели управления</label>
+          <div class="custom-spinbox">
+            <button type="button" class="spin-btn dec" onclick="changeSettingsPort(-1)">−</button>
+            <input type="number" id="sWebPort" value="8081" min="1" max="65535">
+            <button type="button" class="spin-btn inc" onclick="changeSettingsPort(1)">+</button>
+          </div>
+          <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px; line-height: 1.4;">
+            Внимание: После сохранения порт веб-интерфейса изменится, и сервис перезапустится. Вам потребуется открыть панель по новому порту.
+          </p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeSettingsModal()">Отмена</button>
+        <button class="btn" onclick="saveSettings()" id="saveSettingsBtn">Применить</button>
+      </div>
+    </div>
+  </div>
+
+
   <script>
     let profiles = [];
     let activeStatus = { status: 'DISCONNECTED', active_id: '' };
     let interfaces = [];
     let pollInterval = null;
 
+    // Custom spinbox for settings port
+    function changeSettingsPort(amount) {
+      const input = document.getElementById('sWebPort');
+      if (!input) return;
+      let val = parseInt(input.value) || 8081;
+      val += amount;
+      if (val < 1) val = 1;
+      if (val > 65535) val = 65535;
+      input.value = val;
+    }
+
+    function openSettingsModal() {
+      fetch('/api/settings')
+        .then(res => {
+          if (!res.ok) throw new Error('Ошибка сервера');
+          return res.json();
+        })
+        .then(data => {
+          document.getElementById('sWebPort').value = data.web_port || 8081;
+          document.getElementById('settingsModal').classList.add('active');
+        })
+        .catch(err => {
+          alert('Не удалось загрузить настройки: ' + err.message);
+        });
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('settingsModal').classList.remove('active');
+    }
+
+    function saveSettings() {
+      const portInput = document.getElementById('sWebPort');
+      const port = parseInt(portInput.value);
+      if (isNaN(port) || port < 1 || port > 65535) {
+        alert('Пожалуйста, введите корректный порт (1-65535)');
+        return;
+      }
+
+      const btn = document.getElementById('saveSettingsBtn');
+      btn.disabled = true;
+      btn.textContent = 'Сохранение...';
+
+      fetch('/api/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ web_port: port })
+      })
+      .then(async res => {
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(txt || 'Ошибка сервера');
+        }
+        return res.json();
+      })
+      .then(data => {
+        alert(data.message || 'Порт успешно изменен. Перенаправление...');
+        closeSettingsModal();
+        
+        const newUrl = window.location.protocol + '//' + window.location.hostname + ':' + port + '/';
+        setTimeout(() => {
+          window.location.href = newUrl;
+        }, 1500);
+      })
+      .catch(err => {
+        alert('Ошибка при сохранении настроек: ' + err.message);
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.textContent = 'Применить';
+      });
+    }
+
     // Custom spinbox for SOCKS5 port
     function changePort(amount) {
       const input = document.getElementById('pSocksPort');
       if (!input) return;
+
       let val = parseInt(input.value) || 1080;
       val += amount;
       if (val < 1) val = 1;

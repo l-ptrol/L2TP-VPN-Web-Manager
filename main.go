@@ -11,6 +11,7 @@ import (
 	"runtime"
 )
 
+
 //go:embed index.html
 var indexHTML []byte
 
@@ -57,8 +58,10 @@ func main() {
 	http.HandleFunc("/api/status", handleStatus)
 	http.HandleFunc("/api/logs", handleLogs)
 	http.HandleFunc("/api/interfaces", handleGetInterfaces)
+	http.HandleFunc("/api/settings", handleSettings)
 
 	lanIP := getLANIP()
+
 	listenAddr := fmt.Sprintf("%s:%d", lanIP, manager.config.WebPort)
 	log.Printf("[L2TP] Web server listening on http://%s", listenAddr)
 
@@ -290,3 +293,79 @@ func handleGetInterfaces(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = json.NewEncoder(w).Encode(result)
 }
+
+type settingsRequest struct {
+	WebPort int `json:"web_port"`
+}
+
+func handleSettings(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		w.Header().Set("Content-Type", "application/json")
+		manager.mu.Lock()
+		port := manager.config.WebPort
+		manager.mu.Unlock()
+		_ = json.NewEncoder(w).Encode(map[string]int{"web_port": port})
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		var req settingsRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if req.WebPort < 1 || req.WebPort > 65535 {
+			http.Error(w, "Invalid port number. Must be between 1 and 65535.", http.StatusBadRequest)
+			return
+		}
+
+		manager.mu.Lock()
+		oldPort := manager.config.WebPort
+		manager.mu.Unlock()
+
+		if req.WebPort != oldPort {
+			manager.mu.Lock()
+			manager.config.WebPort = req.WebPort
+			manager.mu.Unlock()
+
+			_ = manager.SaveConfig()
+
+			log.Printf("[L2TP] Web port updated to %d. Restarting service in 1 second...", req.WebPort)
+			
+			// Send response before restarting
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"status":"success","message":"Порт успешно изменен. Перезагрузка веб-панели..."}`))
+			
+			go restartSelf()
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"status":"success","message":"Порт не изменился."}`))
+		return
+	}
+
+	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+}
+
+
+func filterArgs(args []string) []string {
+	var newArgs []string
+	newArgs = append(newArgs, args[0])
+	for i := 1; i < len(args); i++ {
+		if args[i] == "-port" {
+			i++ // skip flag value
+			continue
+		}
+		if len(args[i]) >= 6 && args[i][:6] == "-port=" {
+			continue // skip inline value
+		}
+		newArgs = append(newArgs, args[i])
+	}
+	return newArgs
+}
+
+
+
+

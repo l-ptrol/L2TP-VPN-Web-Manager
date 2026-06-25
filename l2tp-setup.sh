@@ -229,8 +229,43 @@ mkdir -p /opt/bin
 cat <<'EOF' > /opt/bin/ptrol-l2tp
 #!/bin/sh
 export PATH="/opt/bin:/opt/sbin:$PATH"
-/opt/etc/init.d/S99l2tp-vpn "$@"
+
+if [ "$1" = "port" ]; then
+    PORT=$2
+    if [ -z "$PORT" ]; then
+        echo "Использование: ptrol-l2tp port <номер_порта>"
+        exit 1
+    fi
+    if ! echo "$PORT" | grep -qE '^[0-9]+$' || [ "$PORT" -lt 1 ] || [ "$PORT" -gt 65535 ]; then
+        echo "Ошибка: Неверный порт. Порт должен быть числом от 1 до 65535."
+        exit 1
+    fi
+    CONFIG_FILE="/opt/etc/l2tp_vpn_config.json"
+    if [ -f "$CONFIG_FILE" ]; then
+        echo "[+] Обновление порта веб-панели на $PORT в $CONFIG_FILE..."
+        sed -i "s/\"web_port\":\s*[0-9]*/\"web_port\": $PORT/g" "$CONFIG_FILE"
+    else
+        echo "[-] Ошибка: Конфигурационный файл $CONFIG_FILE не найден."
+        exit 1
+    fi
+    if [ -x "/opt/etc/init.d/S99l2tp-web" ]; then
+        echo "[+] Перезапуск службы веб-менеджера..."
+        /opt/etc/init.d/S99l2tp-web restart
+    else
+        echo "[!] Предупреждение: Скрипт запуска /opt/etc/init.d/S99l2tp-web не найден."
+    fi
+    echo "[+] Порт успешно изменен на $PORT."
+    exit 0
+fi
+
+if [ -x "/opt/etc/init.d/S99l2tp-vpn" ]; then
+    /opt/etc/init.d/S99l2tp-vpn "$@"
+else
+    echo "Использование: ptrol-l2tp {start|stop|status|restart|port}"
+    exit 1
+fi
 EOF
+
 chmod +x /opt/bin/ptrol-l2tp
 
 # 8. Детектируем локальный IP роутера (LAN) для вывода ссылки

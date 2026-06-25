@@ -1,4 +1,6 @@
 .agents/
 .kilocode/
 l2tp_vpn_config.json
+*.log
 GEMINI.MD
+

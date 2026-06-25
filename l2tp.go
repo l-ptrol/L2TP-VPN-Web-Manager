@@ -817,13 +817,48 @@ esac
 	// Create global control script /opt/bin/ptrol-l2tp
 	l2tpControl := `#!/bin/sh
 export PATH="/opt/bin:/opt/sbin:$PATH"
-/opt/etc/init.d/S99l2tp-vpn "$@"
+
+if [ "$1" = "port" ]; then
+    PORT=$2
+    if [ -z "$PORT" ]; then
+        echo "Использование: ptrol-l2tp port <номер_порта>"
+        exit 1
+    fi
+    if ! echo "$PORT" | grep -qE '^[0-9]+$' || [ "$PORT" -lt 1 ] || [ "$PORT" -gt 65535 ]; then
+        echo "Ошибка: Неверный порт. Порт должен быть числом от 1 до 65535."
+        exit 1
+    fi
+    CONFIG_FILE="/opt/etc/l2tp_vpn_config.json"
+    if [ -f "$CONFIG_FILE" ]; then
+        echo "[+] Обновление порта веб-панели на $PORT в $CONFIG_FILE..."
+        sed -i "s/\"web_port\":\s*[0-9]*/\"web_port\": $PORT/g" "$CONFIG_FILE"
+    else
+        echo "[-] Ошибка: Конфигурационный файл $CONFIG_FILE не найден."
+        exit 1
+    fi
+    if [ -x "/opt/etc/init.d/S99l2tp-web" ]; then
+        echo "[+] Перезапуск службы веб-менеджера..."
+        /opt/etc/init.d/S99l2tp-web restart
+    else
+        echo "[!] Предупреждение: Скрипт запуска /opt/etc/init.d/S99l2tp-web не найден."
+    fi
+    echo "[+] Порт успешно изменен на $PORT."
+    exit 0
+fi
+
+if [ -x "/opt/etc/init.d/S99l2tp-vpn" ]; then
+    /opt/etc/init.d/S99l2tp-vpn "$@"
+else
+    echo "Использование: ptrol-l2tp {start|stop|status|restart|port}"
+    exit 1
+fi
 `
 	_ = os.MkdirAll("/opt/bin", 0755)
 	_ = os.WriteFile("/opt/bin/ptrol-l2tp", []byte(strings.ReplaceAll(l2tpControl, "\r\n", "\n")), 0755)
 
 	return nil
 }
+
 
 func mapBool(b bool) string {
 	if b {
@@ -1489,9 +1524,8 @@ func (m *Manager) monitorInterface(ctx context.Context, id string, currentIface 
 
 func (m *Manager) ResumeMonitoring() {
 	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	if m.config.ActiveID == "" {
+		m.mu.Unlock()
 		return
 	}
 
@@ -1506,6 +1540,7 @@ func (m *Manager) ResumeMonitoring() {
 	}
 
 	if !found {
+		m.mu.Unlock()
 		return
 	}
 
@@ -1517,8 +1552,32 @@ func (m *Manager) ResumeMonitoring() {
 
 	resolvedOutInterface := selectActiveInterface(target.OutInterface)
 	m.activeIface = resolvedOutInterface
+	m.mu.Unlock()
+
 	go m.monitorInterface(ctx, target.ID, resolvedOutInterface)
+
+	// If the tunnel is already connected in the system but SOCKS5 is not running in this process,
+	// restore SOCKS5 server on the configured port.
+	status := m.GetStatus()
+	if status.Status == "CONNECTED" && status.Device != "" && status.IP != "" {
+		m.mu.Lock()
+		isSocksNil := m.socksServer == nil
+		socksPort := target.SocksPort
+		m.mu.Unlock()
+
+		if isSocksNil {
+			if socksPort <= 0 {
+				socksPort = 1080
+			}
+			ipAddr := status.IP
+			if idx := strings.Index(ipAddr, "/"); idx != -1 {
+				ipAddr = ipAddr[:idx]
+			}
+			m.StartSocks(ipAddr, status.Device, socksPort)
+		}
+	}
 }
+
 
 func (m *Manager) TriggerAutostart() {
 	var autostartID string
