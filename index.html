@@ -1085,7 +1085,7 @@
         })
         .then(data => {
           document.getElementById('sWebPort').value = data.web_port || 8081;
-          document.getElementById('settingsModal').classList.add('active');
+          document.getElementById('settingsModal').style.display = 'flex';
         })
         .catch(err => {
           alert('Не удалось загрузить настройки: ' + err.message);
@@ -1093,7 +1093,7 @@
     }
 
     function closeSettingsModal() {
-      document.getElementById('settingsModal').classList.remove('active');
+      document.getElementById('settingsModal').style.display = 'none';
     }
 
     function saveSettings() {
