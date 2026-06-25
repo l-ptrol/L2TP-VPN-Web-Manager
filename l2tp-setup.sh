@@ -140,18 +140,30 @@ elif [ "$IS_PIPE" -eq 0 ] && [ -f "./l2tp-web" ]; then
     cp "./l2tp-web" /opt/usr/bin/l2tp-web
     chmod +x /opt/usr/bin/l2tp-web
 else
-    # Скачиваем бинарник из GitHub репозитория (ветка main) с кэш-бастером
+    # Скачиваем бинарник из GitHub репозитория (ветка main) или зеркал/CDN с таймаутом
     NOCACHE=$(date +%s)
-    DOWNLOAD_URL="https://raw.githubusercontent.com/l-ptrol/L2TP-VPN-Web-Manager/main/$BIN_NAME?nocache=$NOCACHE"
-    echo "[+] Скачивание бинарного файла с GitHub: https://raw.githubusercontent.com/l-ptrol/L2TP-VPN-Web-Manager/main/$BIN_NAME..."
-    
-    # Пробуем wget с отключением проверки сертификатов на случай отсутствия ca-certificates
-    wget --no-check-certificate -qO /opt/usr/bin/l2tp-web "$DOWNLOAD_URL" 2>/dev/null || \
-    wget --no-check-certificate -O /opt/usr/bin/l2tp-web "$DOWNLOAD_URL" 2>/dev/null || \
-    curl -k -sL -o /opt/usr/bin/l2tp-web "$DOWNLOAD_URL"
+    URL1="https://raw.githubusercontent.com/l-ptrol/L2TP-VPN-Web-Manager/main/$BIN_NAME?nocache=$NOCACHE"
+    URL2="https://ghproxy.net/https://raw.githubusercontent.com/l-ptrol/L2TP-VPN-Web-Manager/main/$BIN_NAME?nocache=$NOCACHE"
+    URL3="https://cdn.jsdelivr.net/gh/l-ptrol/L2TP-VPN-Web-Manager@main/$BIN_NAME"
 
+    echo "[+] Попытка скачать бинарный файл (с поддержкой зеркал для обхода блокировок)..."
     
-    if [ -s "/opt/usr/bin/l2tp-web" ]; then
+    SUCCESS=0
+    for url in "$URL1" "$URL2" "$URL3"; do
+        echo "[+] Пробуем скачать с: $url"
+        # Пробуем wget с коротким таймаутом (8 сек)
+        if wget -T 8 --no-check-certificate -qO /opt/usr/bin/l2tp-web "$url" 2>/dev/null && [ -s "/opt/usr/bin/l2tp-web" ]; then
+            SUCCESS=1
+            break
+        fi
+        # Пробуем curl с коротким таймаутом (8 сек)
+        if curl -k -sL --connect-timeout 8 -o /opt/usr/bin/l2tp-web "$url" 2>/dev/null && [ -s "/opt/usr/bin/l2tp-web" ]; then
+            SUCCESS=1
+            break
+        fi
+    done
+
+    if [ "$SUCCESS" -eq 1 ]; then
         echo "[+] Скачивание завершено успешно."
         chmod +x /opt/usr/bin/l2tp-web
     else
